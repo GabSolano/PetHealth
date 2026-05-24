@@ -10,7 +10,7 @@ O PetHealth Ecosystem é uma plataforma voltada para a saúde proativa de pets. 
 - Acesso a um banco de dados Oracle (FIAP).
 
 **Passo a passo:**
-1. Clone o repositório: `git clone URL_DO_SEU_REPO`
+1. Clone o repositório: `git clone https://github.com/GabSolano/PetHealth`
 2. Navegue até a pasta do projeto: `cd PetHealthEcosystem.Api`
 3. Restaure os pacotes: `dotnet restore`
 4. Configure a Connection String do Oracle no arquivo `appsettings.json`.
