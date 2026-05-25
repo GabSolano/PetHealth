@@ -1,5 +1,5 @@
 # 🐾 PetHealth Ecosystem API
-- GAbriel Costa Solano - RM562325
+- Gabriel Costa Solano - RM562325
 - Kaiky Pereira Rodrigues - RM564578
 - Leandro Guarido - RM561760
 
