@@ -1,4 +1,7 @@
 # 🐾 PetHealth Ecosystem API
+- GAbriel Costa Solano - RM562325
+- Kaiky Pereira Rodrigues - RM564578
+- Leandro Guarido - RM561760
 
 ## 📖 Descrição do Projeto
 O PetHealth Ecosystem é uma plataforma voltada para a saúde proativa de pets. Atuando nos pilares preventivo e terapêutico, esta API serve como o motor para um ecossistema omnichannel que gerencia lembretes de vacinas inteligentes, acompanhamento de pós-operatórios e retenção de tutores.
