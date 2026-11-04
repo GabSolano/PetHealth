@@ -12,6 +12,9 @@ namespace PetHealthEcosystem.Api.Application.Common
                 new LinkDto($"{baseUrl}/{pet.Id}", "self", "GET"),
                 new LinkDto($"{baseUrl}/{pet.Id}", "update", "PUT"),
                 new LinkDto($"{baseUrl}/{pet.Id}", "delete", "DELETE"),
+                new LinkDto($"{baseUrl}/{pet.Id}/medical-record", "medical-record", "GET"),
+                new LinkDto($"{baseUrl}/{pet.Id}/post-op-checkin", "post-op-checkin", "POST"),
+                new LinkDto($"{baseUrl}/{pet.Id}/vaccines", "register-vaccine", "POST"),
                 new LinkDto($"/api/petcarelogs/pet/{pet.Id}", "care-logs", "GET"),
                 new LinkDto(baseUrl, "all-pets", "GET")
             };

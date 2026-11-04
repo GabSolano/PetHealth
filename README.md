@@ -165,8 +165,12 @@ A API possui usuários pré-configurados para validação das permissões e flux
 | `GET` | `/api/pets/{id}` | Público | Detalhes do pet com links de navegação HATEOAS |
 | `GET` | `/api/pets/breed/{breed}` | Público | Consulta pets filtrados por raça |
 | `GET` | `/api/pets/post-op/{needsCare}` | Público | Filtra pets com necessidade de cuidado pós-operatório |
+| `GET` | `/api/pets/post-op/critical-alerts` | `[Authorize(Roles="Admin,Veterinario")]` | Painel de triagem: lista pets com alertas pós-op críticos |
+| `GET` | `/api/pets/{id}/medical-record` | Público | Prontuário consolidado (cadastro, vacinas e check-ins) |
 | `GET` | `/api/pets/tutor/{tutorName}` | Público | Consulta pets pelo nome do tutor |
 | `POST` | `/api/pets` | `[Authorize]` | Cadastra novo pet e registra histórico no MongoDB |
+| `POST` | `/api/pets/{id}/post-op-checkin` | Público | Registra check-in pós-op (WhatsApp/App) e avalia criticidade |
+| `POST` | `/api/pets/{id}/vaccines` | `[Authorize(Roles="Admin,Veterinario")]` | Registra vacina e agenda reforço na carteira digital |
 | `PUT` | `/api/pets/{id}` | `[Authorize]` | Atualiza pet e registra alteração no prontuário NoSQL |
 | `DELETE` | `/api/pets/{id}` | `[Authorize(Roles="Admin")]` | Remove pet da base (restrito a Admin) |
 
@@ -187,26 +191,34 @@ A API possui usuários pré-configurados para validação das permissões e flux
 
 ---
 
-## 🧪 Testes Automatizados (Padrão AAA)
+## 🧪 Estratégia de QA e Automação de Testes (Trabalho Contínuo com QA)
 
-A solução conta com **37 testes automatizados** cobrindo 100% dos fluxos de negócio, segurança e persistência:
+A plataforma PetHealth foi desenhada com **arquitetura orientada à testabilidade (QA Readiness)** para viabilizar a criação rápida e confiável de novos testes automatizados:
 
-* **22 Testes Unitários (`PetHealthEcosystem.Tests.Unit`):**
-  - Validações de negócio (campos obrigatórios, limites de idade, integridade de dados).
-  - Serviços de autenticação JWT e emissão de claims.
-  - Orquestração do prontuário NoSQL e rotinas de auditoria.
-  - Regras de paginação, ordenação e filtros.
-* **15 Testes de Integração (`PetHealthEcosystem.Tests.Integration`):**
-  - Inicialização completa da API em memória via `WebApplicationFactory`.
-  - Ciclo de vida HTTP de ponta a ponta (POST, GET, PUT, DELETE).
-  - Validação de cabeçalhos de resposta (`Location`, `Content-Type`).
-  - Verificação dos links HATEOAS nos retornos.
-  - Validação de autenticação JWT e rotas protegidas (401 / 403).
-  - Validação dos endpoints de Health Check.
+- **Guia Completo de Automação de QA:** Acesse a especificação completa em [docs/QA_AUTOMATION_GUIDE.md](docs/QA_AUTOMATION_GUIDE.md).
+- **Especificações Formais em BDD / Gherkin:** Cenários estruturados em *Given-When-Then* para validação do pós-operatório inteligente, cálculo vacinal e segurança RBAC.
+- **Padrão Object Mother & Test Data Builders:**
+  - `PetTestDataBuilder`: Criação fluente de pets em cenários normais, pós-operatório ou alerta crítico.
+  - `PostOpCheckInBuilder`: Montagem de respostas simuladas do canal WhatsApp (recuperação saudável vs intercorrências cirúrgicas).
+  - `PetCareLogTestDataBuilder`: Instanciação de prontuários clínicos e vacinas NoSQL.
+- **Utilitário de Autenticação para QA (`QaAuthTokenHelper`):** Geração instantânea de tokens JWT Bearer válidos para perfis `Admin`, `Veterinario` e `Tutor` sem overhead de chamadas HTTP de login nas suítes automatizadas.
+- **Rastreabilidade de Diagnóstico:** Header `X-Correlation-Id` e especificação RFC 7807 (`ProblemDetails`) em todos os endpoints para investigação imediata de falhas de asserção em testes de QA.
+
+### Suíte de Testes Existente (44 Testes 100% Aprovados):
+* **26 Testes Unitários (`PetHealthEcosystem.Tests.Unit`):**
+  - Regras clínicas de pós-operatório (detecção automática de dor severa, vômitos e sangramento).
+  - Cálculo preventivo de datas de reforço vacinal.
+  - Consistência cadastral, validações de domínio e paginação/ordenação.
+  - Serviços de autenticação JWT e prontuário NoSQL.
+* **18 Testes de Integração (`PetHealthEcosystem.Tests.Integration`):**
+  - Simulação de check-ins via canal WhatsApp atualizando status no banco de dados.
+  - Validação de rotas protegidas por perfil RBAC (Admin vs Veterinário vs Tutor).
+  - Consulta do prontuário médico unificado e painel de alertas críticos.
+  - Verificação de links hipermídia HATEOAS, paginação dinâmica e Health Checks.
 
 ### Como Executar os Testes:
 ```bash
-# Executa todos os testes da solução
+# Executa todos os 44 testes da solução
 dotnet test
 
 # Executa apenas os testes unitários
