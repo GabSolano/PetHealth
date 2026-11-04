@@ -81,11 +81,6 @@ namespace PetHealthEcosystem.Api.Infrastructure.Repositories
                 .Where(p => p.TutorName.Contains(tutorName))
                 .ToListAsync();
 
-        public async Task<IEnumerable<Pet>> GetCriticalAlertsAsync() =>
-            await _context.Pets
-                .Where(p => p.RecoveryStatus == "Alerta Crítico" || (p.NeedsPostOpCare && p.RecoveryStatus == "Em Observação"))
-                .ToListAsync();
-
         public async Task AddAsync(Pet pet) =>
             await _context.Pets.AddAsync(pet);
 

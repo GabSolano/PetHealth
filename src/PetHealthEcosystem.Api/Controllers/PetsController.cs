@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetHealthEcosystem.Api.Application.Common;
-using PetHealthEcosystem.Api.Application.DTOs.Clinical;
 using PetHealthEcosystem.Api.Application.DTOs.Pets;
 using PetHealthEcosystem.Api.Application.Interfaces;
 using PetHealthEcosystem.Api.Models;
@@ -69,30 +68,6 @@ namespace PetHealthEcosystem.Api.Controllers
         }
 
         /// <summary>
-        /// Retorna a lista de pets em estado de Alerta Crítico no pós-operatório (para triagem veterinária).
-        /// </summary>
-        [HttpGet("post-op/critical-alerts")]
-        [Authorize(Roles = "Admin,Veterinario")]
-        public async Task<IActionResult> GetCriticalAlerts()
-        {
-            var criticalPets = await _petService.GetCriticalAlertPetsAsync();
-            var list = criticalPets.Select(p => p.AddHateoasLinks()).ToList();
-            return Ok(list);
-        }
-
-        /// <summary>
-        /// Retorna o prontuário clínico consolidado do Pet (dados cadastrais + histórico NoSQL de vacinas e check-ins).
-        /// </summary>
-        [HttpGet("{id:int}/medical-record")]
-        public async Task<IActionResult> GetMedicalRecord(int id)
-        {
-            var record = await _petService.GetMedicalRecordAsync(id);
-            if (record == null) return NotFound("Pet não encontrado.");
-            record.Pet.AddHateoasLinks();
-            return Ok(record);
-        }
-
-        /// <summary>
         /// Retorna pets pelo nome do tutor.
         /// </summary>
         [HttpGet("tutor/{tutorName}")]
@@ -120,54 +95,6 @@ namespace PetHealthEcosystem.Api.Controllers
 
             created!.AddHateoasLinks();
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
-        }
-
-        /// <summary>
-        /// Registra um check-in de pós-operatório (enviado via WhatsApp/IA ou App do Tutor).
-        /// Avalia automaticamente sintomas e classifica se há Alerta Crítico.
-        /// </summary>
-        [HttpPost("{id:int}/post-op-checkin")]
-        public async Task<IActionResult> RegisterPostOpCheckIn(int id, [FromBody] PostOpCheckInRequest request)
-        {
-            if (request == null) return BadRequest("Dados do check-in são obrigatórios.");
-
-            var (success, error, log) = await _petService.RegisterPostOpCheckInAsync(id, request);
-            if (!success)
-            {
-                if (error == "Pet não encontrado.") return NotFound(error);
-                return BadRequest(error);
-            }
-
-            return Ok(new
-            {
-                Message = log!.IsCriticalAlert 
-                    ? "Check-in registrado. ATENÇÃO: Identificado alerta clínico crítico! Veterinário de plantão acionado." 
-                    : "Check-in registrado com sucesso. Recuperação em andamento normal.",
-                CheckIn = log
-            });
-        }
-
-        /// <summary>
-        /// Registra uma vacina ou profilaxia preventiva para o pet (Requer perfil de Veterinário ou Admin).
-        /// </summary>
-        [HttpPost("{id:int}/vaccines")]
-        [Authorize(Roles = "Admin,Veterinario")]
-        public async Task<IActionResult> RegisterVaccine(int id, [FromBody] VaccineRegistrationRequest request)
-        {
-            if (request == null) return BadRequest("Dados da vacina são obrigatórios.");
-
-            var (success, error, log) = await _petService.RegisterVaccineAsync(id, request);
-            if (!success)
-            {
-                if (error == "Pet não encontrado.") return NotFound(error);
-                return BadRequest(error);
-            }
-
-            return Ok(new
-            {
-                Message = "Vacina registrada com sucesso na carteira de vacinação do Pet.",
-                VaccineLog = log
-            });
         }
 
         /// <summary>
