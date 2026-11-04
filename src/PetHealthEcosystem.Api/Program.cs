@@ -136,9 +136,9 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "PetHealthEcosystem API",
+        Title = "PetHealth API",
         Version = "v1",
-        Description = "API Restful do Ecossistema de Saúde Animal - FIAP 4ª Sprint\n\nIntegrantes:\n- Gabriel Costa Solano (RM 562325)\n- Leandro Guarido (RM 561760)\n- Kaiky Pereira Rodrigues (RM 564578)\nTurma: 2TDSPV"
+        Description = "API Backend do Ecossistema de Saúde Animal Proativa PetHealth (Pilares Preventivo e Terapêutico)\n\nEquipe PetHealth:\n- Gabriel Costa Solano (RM 562325)\n- Leandro Guarido (RM 561760)\n- Kaiky Pereira Rodrigues (RM 564578)\nTurma: 2TDSPV"
     });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

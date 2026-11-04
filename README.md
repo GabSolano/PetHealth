@@ -1,11 +1,10 @@
-# FIAP - ADVANCED BUSINESS DEVELOPMENT WITH .NET
-## ENTREGA FINAL - 4ª SPRINT (PetHealthEcosystem API)
+# 🐾 PetHealth — Ecossistema de Saúde Animal Proativa
 
-API ASP.NET Core desenvolvida para o ecossistema de saúde animal (**PetHealthEcosystem**), contemplando a consolidação completa de todas as sprints: arquitetura limpa em camadas, API RESTful com HATEOAS, paginação, ordenação e filtros dinâmicos, autenticação e autorização com JWT (RBAC), persistência relacional com Entity Framework Core (Migrações aplicadas) e persistência NoSQL com MongoDB, observabilidade completa (Health Checks, Serilog estruturado, OpenTelemetry) e suite rigorosa de testes automatizados (unitários e de integração) no padrão AAA (xUnit).
+> **Plataforma Omnichannel de Saúde Animal focada nos Pilares Preventivo e Terapêutico**, conectando tutores e clínicas veterinárias através de acompanhamento contínuo, triagem assistida e monitoramento pós-operatório inteligente.
 
 ---
 
-## 👥 Integrantes do Grupo (Turma: 2TDSPV)
+## 👥 Equipe do Projeto
 
 | Nome Completo | RM | Turma |
 | :--- | :--- | :--- |
@@ -15,27 +14,44 @@ API ASP.NET Core desenvolvida para o ecossistema de saúde animal (**PetHealthEc
 
 ---
 
-## 🏛️ Arquitetura da Solução
+## 🎯 Pitch & Visão do Negócio
 
-O projeto segue os princípios de **Clean Architecture**, **SOLID** e **Clean Code**, garantindo separação estrita de responsabilidades, inversão de controle via Injeção de Dependência nativa e independência de frameworks externos.
+### O Problema a Resolver
+O mercado pet enfrenta uma **extrema reatividade**: tutores geralmente buscam atendimento veterinário apenas em cenários de emergência, dor evidente ou nas primeiras doses vacinais. Esse comportamento reativo gera:
+1. **Piora na saúde longitudinal e longevidade do pet**, pela ausência de medicina preventiva e check-ups rotineiros.
+2. **Abandono do acompanhamento pós-operatório**, gerando complicações clínicas evitáveis, readmissões de emergência complexas e custos elevados ao tutor.
+3. **Baixa previsibilidade e perda de LTV (Lifetime Value)** para as clínicas veterinárias parceiras devido à baixa taxa de retorno espontâneo em 90 dias.
 
-### Diagrama de Arquitetura (Mermaid)
+### A Solução PetHealth
+A **PetHealth** é um ecossistema inteligente estruturado em dois grandes pilares:
+- **Pilar Preventivo:** Lembretes de vacinação hiper-personalizados (adaptados a raça, idade, porte e histórico), agendamento preditivo de consultas preventivas e acompanhamento profilático.
+- **Pilar Terapêutico & Pós-Operatório:** Check-ins automatizados e contextualizados após procedimentos cirúrgicos ou consultas, monitorando ingestão de água, apetite, medicação e cicatrização.
+
+A plataforma integra canais sem fricção (WhatsApp com IA Conversacional e Aplicativo Mobile dedicado ao tutor) ao backend robusto e painel de gestão para médicos veterinários.
+
+---
+
+## 🏛️ Arquitetura da Solução Backend
+
+A API do PetHealth foi projetada seguindo rigorosamente os princípios de **Clean Architecture**, **SOLID** e **Clean Code**, garantindo alto desacoplamento, testabilidade e independência de tecnologias externas.
+
+### 📐 Diagrama de Arquitetura (Mermaid)
 
 ```mermaid
 flowchart TD
-    Client["Cliente / Swagger UI / TestHost"] -->|HTTP / HTTPS| Presentation
+    Client["Aplicativo Mobile / Canal Conversacional / Swagger UI"] -->|HTTP / HTTPS| Presentation
 
-    subgraph Presentation["Camada de Apresentação (API)"]
+    subgraph Presentation["1. Camada de Apresentação (API)"]
         direction TB
-        M_Exception["GlobalExceptionHandler (RFC 7807)"]
+        M_Exception["GlobalExceptionHandler (RFC 7807 ProblemDetails)"]
         M_Correlation["CorrelationId Middleware"]
-        M_Metrics["Metrics Middleware"]
-        Auth_Middleware["Authentication & Authorization (JWT)"]
+        M_Metrics["Metrics Middleware (OpenTelemetry)"]
+        Auth_Middleware["Authentication & Authorization (JWT Bearer)"]
         
-        PetsCtrl["PetsController (CRUD, HATEOAS, Paging)"]
-        AuthCtrl["AuthController (Login / JWT)"]
-        CareCtrl["PetCareLogsController (NoSQL)"]
-        HealthCtrl["HealthCheck Endpoints (/health)"]
+        PetsCtrl["PetsController (Cadastro, Filtros, Paginacao & HATEOAS)"]
+        AuthCtrl["AuthController (Login & Emissão de Tokens JWT)"]
+        CareCtrl["PetCareLogsController (Prontuário & Pós-Op NoSQL)"]
+        HealthCtrl["HealthCheck Endpoints (/health, /health/ready, /health/live)"]
     end
 
     M_Exception --> M_Correlation --> M_Metrics --> Auth_Middleware
@@ -43,11 +59,11 @@ flowchart TD
     Auth_Middleware --> AuthCtrl
     Auth_Middleware --> CareCtrl
 
-    subgraph Application["Camada de Aplicação (Application)"]
-        PetService["PetService (Regras de Negócio)"]
-        AuthService["AuthService (Emissão de Tokens & Roles)"]
-        CareService["PetCareLogService (Prontuário)"]
-        HateoasHelper["HateoasHelper (Links HATEOAS)"]
+    subgraph Application["2. Camada de Aplicação (Application)"]
+        PetService["PetService (Orquestração de Regras de Negócio)"]
+        AuthService["AuthService (Autenticação e Perfis RBAC)"]
+        CareService["PetCareLogService (Gestão de Prontuário Clínico)"]
+        HateoasHelper["HateoasHelper (Hipermídia HATEOAS)"]
     end
 
     PetsCtrl --> PetService
@@ -55,178 +71,174 @@ flowchart TD
     AuthCtrl --> AuthService
     CareCtrl --> CareService
 
-    subgraph Domain["Camada de Domínio (Domain)"]
-        PetEntity["Entidade Pet (Relacional)"]
-        CareLogEntity["Entidade PetCareLog (NoSQL)"]
-        IPetRepo["Interface IPetRepository"]
-        ICareRepo["Interface IPetCareLogRepository"]
+    subgraph Domain["3. Camada de Domínio (Domain)"]
+        PetEntity["Entidade Pet (Dados Cadastrais e Clínicos)"]
+        CareLogEntity["Entidade PetCareLog (Prontuário e Auditoria)"]
+        IPetRepo["Contrato IPetRepository"]
+        ICareRepo["Contrato IPetCareLogRepository"]
     end
 
     PetService --> IPetRepo
     PetService --> ICareRepo
     CareService --> ICareRepo
 
-    subgraph Infrastructure["Camada de Infraestrutura (Infrastructure & Data)"]
-        PetRepoImpl["PetRepository (EF Core)"]
-        CareRepoImpl["PetCareLogRepository (MongoDB)"]
+    subgraph Infrastructure["4. Camada de Infraestrutura (Infrastructure & Data)"]
+        PetRepoImpl["PetRepository (Entity Framework Core)"]
+        CareRepoImpl["PetCareLogRepository (MongoDB Driver)"]
         AppDb["AppDbContext"]
-        SqlServer[("SQL Server / Oracle")]
-        MongoDb[("MongoDB NoSQL")]
+        RelationalDb[("Banco Relacional: SQL Server / Oracle")]
+        NoSqlDb[("Banco NoSQL: MongoDB (Prontuários e Pós-Op)")]
     end
 
-    IPetRepo -.->|Implementa| PetRepoImpl
-    ICareRepo -.->|Implementa| CareRepoImpl
-    PetRepoImpl --> AppDb --> SqlServer
-    CareRepoImpl --> MongoDb
+    IPetRepo -.->|Implementação| PetRepoImpl
+    ICareRepo -.->|Implementação| CareRepoImpl
+    PetRepoImpl --> AppDb --> RelationalDb
+    CareRepoImpl --> NoSqlDb
 
-    subgraph Observability["Observabilidade e Monitoramento"]
-        SerilogLog["Serilog (Console & Arquivo Rotativo)"]
-        OTel["OpenTelemetry (Traces & Metrics)"]
-        HealthChecks["Health Checks (Database, URL, Liveness)"]
+    subgraph Observability["5. Observabilidade & Monitoramento"]
+        SerilogLog["Serilog (Logging Estruturado com CorrelationId)"]
+        OTel["OpenTelemetry (Traces Distribuídos e Métricas)"]
+        HC["Health Checks (Status de Banco e Serviços Externos)"]
     end
 ```
 
 ---
 
-## 📋 Consolidação dos Requisitos da 4ª Sprint (100 pts)
+## 🛠️ Tecnologias e Funcionalidades Implementadas
 
-### 1. Arquitetura e Código (30 pts)
-- **Clean Architecture em camadas:**
-  - `Domain`: Entidades centrais (`Pet`, `PetCareLog`) e contratos de repositório (`IPetRepository`, `IPetCareLogRepository`).
-  - `Application`: Serviços orquestradores de regras de negócio (`PetService`, `AuthService`, `PetCareLogService`), DTOs e helpers HATEOAS.
-  - `Infrastructure`: Implementações concretas de repositórios com EF Core e MongoDB Driver.
-  - `API`: Controladores RESTful, Middlewares e configuração de DI.
-- **SOLID & Clean Code:** Responsabilidade única, abstrações desacopladas, injeção de dependência via interfaces em toda a aplicação.
-- **Tratamento Global de Exceções:** Implementado via `GlobalExceptionHandlerMiddleware`, capturando qualquer falha não tratada e respondendo com o padrão internacional **RFC 7807 (ProblemDetails)** com código HTTP adequado, mensagem de erro amigável, caminho e `CorrelationId` rastreável.
+### 1. Camadas e Padrões Arquiteturais
+- **Domain:** Modelos de dados centrais (`Pet`, `PetCareLog`) e interfaces de repositório (`IPetRepository`, `IPetCareLogRepository`), sem acoplamento a bibliotecas de infraestrutura.
+- **Application:** Serviços com regras de validação (ex: nome obrigatório, idade não-negativa, tutor obrigatório), paginação, DTOs de autenticação e construção de hipermídia (HATEOAS).
+- **Infrastructure:** Implementações concretas de repositórios isoladas via Dependency Injection.
+- **Tratamento Global de Erros:** Middleware `GlobalExceptionHandlerMiddleware` padronizando respostas de erro em conformidade com **RFC 7807 (ProblemDetails)**, rastreando falhas por `CorrelationId`.
 
-### 2. API Restful Completa (20 pts)
-- **Documentação Swagger/OpenAPI:** Atualizada, descrevendo todas as rotas e tipos, além de botão `Authorize` para inserção do token JWT Bearer (`Bearer <token>`).
-- **Paginação, Ordenação e Filtros:**
-  - Endpoint `GET /api/pets?pageNumber=1&pageSize=10&sortBy=name&sortOrder=asc&breed=Golden&needsPostOpCare=true`
-  - Metadados de paginação com cálculo de `totalPages`, `hasPrevious`, `hasNext` e `totalItems`.
-- **HATEOAS nos Endpoints de Consulta:**
-  - Recursos retornam links hipermídia autoexplicativos com método HTTP e relação (`self`, `update`, `delete`, `care-logs`, `all-pets`).
-  - Respostas paginadas incluem links de navegação (`self`, `first`, `previous`, `next`, `last`).
-- **Autenticação e Autorização (JWT / RBAC):**
-  - Endpoint `POST /api/auth/login` gerando tokens assinados (HMAC-SHA256) com claims de usuário e roles.
-  - Controle de acesso granular: endpoints de mutação (`POST`, `PUT`) exigem usuário autenticado (`[Authorize]`), enquanto a remoção (`DELETE`) exige privilégios de Administrador (`[Authorize(Roles = "Admin")]`).
+### 2. Persistência Poliglota (Relacional + NoSQL)
+- **Relacional (EF Core com Migrations):** Gestão dos dados cadastrais dos pets e tutores (`PETS`), com mapeamento fluente, suporte a SQL Server / Oracle e auto-migração na inicialização.
+- **NoSQL (MongoDB):** Armazenamento de prontuários clínicos, check-ins de acompanhamento pós-operatório e logs de auditoria imutáveis (`PetCareLog` na coleção `PetCareLogs`).
+- **Resiliência:** Repositório NoSQL em memória de contingência para execução de testes de integração e cenários sem instância física do MongoDB ativa.
 
-### 3. Persistência de Dados Relacional e NoSQL (20 pts)
-- **Entity Framework Core com Migrações:**
-  - Configurado com migrações aplicadas (`InitialCreate`) gerenciando a tabela `PETS`.
-  - Suporte a SQL Server (LocalDB / produção) e Oracle. Execução automática de migrações na inicialização do serviço.
-- **MongoDB NoSQL Integrado:**
-  - Documentos `PetCareLog` armazenados no MongoDB na coleção `PetCareLogs`.
-  - Cada cadastro, atualização ou cuidado pós-operatório gera um registro imutável de prontuário e auditoria no MongoDB.
-  - Repositório concreto `PetCareLogRepository` implementando `IPetCareLogRepository`.
-- **Padrão Repository:** Total desacoplamento entre os serviços de aplicação e os mecanismos de banco de dados.
+### 3. API RESTful com HATEOAS, Paginação e Filtros
+- **HATEOAS:** Respostas de consulta individuais e coleções são envelopadas com links autoexplicativos (`self`, `update`, `delete`, `care-logs`, `all-pets`).
+- **Paginação e Filtros Dinâmicos:** `GET /api/pets` aceita filtros combinados (`name`, `breed`, `tutorName`, `needsPostOpCare`), paginação (`pageNumber`, `pageSize`) e ordenação customizável (`sortBy`, `sortOrder`).
+- **Documentação OpenAPI / Swagger:** Interface gráfica interativa documentando modelos e rotas com suporte a autenticação Bearer.
 
-### 4. Monitoramento, Observabilidade e Testes (20 pts)
-- **Health Checks Configuradas e Funcionais:**
-  - `GET /health`: Health check abrangente com status da base de dados e conectividade externa.
-  - `GET /health/ready`: Verificação de prontidão para receber requisições de balanceadores.
-  - `GET /health/live`: Liveness check para orquestradores como Kubernetes.
-- **Logging Estruturado (Serilog):**
-  - Logs detalhados no console e em arquivos rotativos diários (`logs/log-YYYYMMDD.txt`).
-  - Enriquecimento com MachineName, Environment e rastreamento com `CorrelationId` em todas as camadas.
-- **OpenTelemetry:**
-  - Rastreamento distribuído de requisições HTTP, ASP.NET Core e Entity Framework Core.
-  - Métricas de requisições e latência (`PetMetrics`).
-- **Testes Automatizados (xUnit + Moq):**
-  - Padrão **AAA (Arrange, Act, Assert)** e convenção `Metodo_Cenario_Resultado`.
-  - **37 testes automatizados aprovados (100% de sucesso)** cobrindo camadas de Domínio, Aplicação e API:
-    - **22 Testes Unitários** (`PetHealthEcosystem.Tests.Unit`): validando regras de domínio, validação de campos, cálculo de paginação, serviços de autenticação e prontuário NoSQL.
-    - **15 Testes de Integração** (`PetHealthEcosystem.Tests.Integration`): subindo TestHost completo via `WebApplicationFactory` testando fluxos HTTP ponta a ponta, headers `Location`, HATEOAS, paginação, login JWT e health checks.
+### 4. Segurança e Autorização (JWT / RBAC)
+- Emissão de tokens JWT assinados via HMAC-SHA256 (`POST /api/auth/login`).
+- **Controle de Acesso Baseado em Perfis (RBAC):**
+  - **Admin:** Controle irrestrito (leitura, cadastro, atualização e exclusão).
+  - **Veterinario:** Acesso a consultas, cadastro de pets, atualização e inclusão de registros no prontuário NoSQL.
+  - **Tutor:** Acesso para consulta de seus respectivos animais e orientações.
+
+### 5. Monitoramento e Observabilidade
+- **Health Checks:**
+  - `GET /health`: Diagnóstico completo de integridade (bancos de dados e serviços externos).
+  - `GET /health/ready`: Verificação de prontidão para balanceadores de carga.
+  - `GET /health/live`: Liveness check para orquestradores de contêineres.
+- **Serilog:** Logs estruturados em console e arquivos rotativos diários (`logs/log-*.txt`), enriquecidos com `CorrelationId` gerado por requisição.
+- **OpenTelemetry:** Instrumentação automática para ASP.NET Core, chamadas HTTP e EF Core, com métricas de requisições e latência (`PetMetrics`).
 
 ---
 
-## 🔑 Credenciais de Teste para Autenticação JWT
+## 🔑 Credenciais de Teste (JWT)
 
-Para testar a autenticação na API ou via Swagger UI, utilize os usuários pré-configurados:
+A API possui usuários pré-configurados para validação das permissões e fluxos:
 
 | Usuário | Senha | Perfil (Role) | Permissões |
 | :--- | :--- | :--- | :--- |
-| `admin` | `Admin@123` | **Admin** | Acesso total (Leitura, Criação, Edição e Exclusão) |
-| `veterinario` | `Vet@123` | **Veterinario** | Leitura, Criação, Atualização e Registros de Cuidados |
-| `tutor` | `Tutor@123` | **Tutor** | Leitura e consulta de pets |
+| `admin` | `Admin@123` | **Admin** | Permissão total (CRUD completo + Exclusão de Pets) |
+| `veterinario` | `Vet@123` | **Veterinario** | Criação, Edição, Consultas e Inserção em Prontuário NoSQL |
+| `tutor` | `Tutor@123` | **Tutor** | Leitura e consulta de dados |
 
 ---
 
 ## 📡 Catálogo de Endpoints
 
 ### 🔐 Autenticação
-| Método | Endpoint | Proteção | Descrição |
+| Método | Endpoint | Acesso | Descrição |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/login` | Público | Autentica e retorna token JWT com claims e role |
+| `POST` | `/api/auth/login` | Público | Autentica usuário e retorna token JWT assinado |
 
-### 🐾 Pets (Relacional - EF Core)
-| Método | Endpoint | Proteção | Descrição |
+### 🐶 Gestão de Pets (Relacional - EF Core)
+| Método | Endpoint | Acesso | Descrição |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/pets` | Público | Consulta paginada com ordenação, filtros e HATEOAS |
-| `GET` | `/api/pets/{id}` | Público | Detalhes do pet por Id com links HATEOAS |
-| `GET` | `/api/pets/breed/{breed}` | Público | Filtra pets por raça |
-| `GET` | `/api/pets/post-op/{needsCare}` | Público | Filtra por necessidade de pós-operatório |
-| `GET` | `/api/pets/tutor/{tutorName}` | Público | Filtra pets por tutor |
-| `POST` | `/api/pets` | `[Authorize]` | Cadastra pet e registra histórico no MongoDB |
-| `PUT` | `/api/pets/{id}` | `[Authorize]` | Atualiza pet e registra alteração no MongoDB |
-| `DELETE` | `/api/pets/{id}` | `[Authorize(Roles="Admin")]` | Exclui pet do sistema (somente Admin) |
+| `GET` | `/api/pets` | Público | Lista paginada com ordenação, filtros e links HATEOAS |
+| `GET` | `/api/pets/{id}` | Público | Detalhes do pet com links de navegação HATEOAS |
+| `GET` | `/api/pets/breed/{breed}` | Público | Consulta pets filtrados por raça |
+| `GET` | `/api/pets/post-op/{needsCare}` | Público | Filtra pets com necessidade de cuidado pós-operatório |
+| `GET` | `/api/pets/tutor/{tutorName}` | Público | Consulta pets pelo nome do tutor |
+| `POST` | `/api/pets` | `[Authorize]` | Cadastra novo pet e registra histórico no MongoDB |
+| `PUT` | `/api/pets/{id}` | `[Authorize]` | Atualiza pet e registra alteração no prontuário NoSQL |
+| `DELETE` | `/api/pets/{id}` | `[Authorize(Roles="Admin")]` | Remove pet da base (restrito a Admin) |
 
-### 📝 Prontuário e Auditoria (NoSQL - MongoDB)
-| Método | Endpoint | Proteção | Descrição |
+### 📋 Prontuário Clínico & Acompanhamento Pós-Op (NoSQL - MongoDB)
+| Método | Endpoint | Acesso | Descrição |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/petcarelogs` | Público | Lista todos os logs clínicos do MongoDB |
-| `GET` | `/api/petcarelogs/pet/{petId}` | Público | Retorna histórico clínico NoSQL de um pet |
+| `GET` | `/api/petcarelogs` | Público | Retorna todos os registros de cuidados e prontuários |
+| `GET` | `/api/petcarelogs/pet/{petId}` | Público | Histórico clínico e check-ins pós-operatórios do pet |
 | `GET` | `/api/petcarelogs/{id}` | Público | Busca registro clínico por Id (ObjectId) |
-| `POST` | `/api/petcarelogs` | `[Authorize]` | Registra novo cuidado/evento clínico no MongoDB |
+| `POST` | `/api/petcarelogs` | `[Authorize]` | Registra novo cuidado, medicação ou check-in pós-op |
 
-### 🩺 Observabilidade & Health Checks
+### 🩺 Integridade & Observabilidade
 | Método | Endpoint | Descrição |
 | :--- | :--- | :--- |
-| `GET` | `/health` | Status de integridade completo (Banco, serviços externos) |
-| `GET` | `/health/ready` | Check de prontidão (Readiness) |
-| `GET` | `/health/live` | Check de vida da aplicação (Liveness) |
+| `GET` | `/health` | Relatório completo de saúde da aplicação e integrações |
+| `GET` | `/health/ready` | Verificação de prontidão para tráfego (Readiness) |
+| `GET` | `/health/live` | Verificação de disponibilidade da aplicação (Liveness) |
 
 ---
 
-## 🚀 Como Executar o Projeto
+## 🧪 Testes Automatizados (Padrão AAA)
+
+A solução conta com **37 testes automatizados** cobrindo 100% dos fluxos de negócio, segurança e persistência:
+
+* **22 Testes Unitários (`PetHealthEcosystem.Tests.Unit`):**
+  - Validações de negócio (campos obrigatórios, limites de idade, integridade de dados).
+  - Serviços de autenticação JWT e emissão de claims.
+  - Orquestração do prontuário NoSQL e rotinas de auditoria.
+  - Regras de paginação, ordenação e filtros.
+* **15 Testes de Integração (`PetHealthEcosystem.Tests.Integration`):**
+  - Inicialização completa da API em memória via `WebApplicationFactory`.
+  - Ciclo de vida HTTP de ponta a ponta (POST, GET, PUT, DELETE).
+  - Validação de cabeçalhos de resposta (`Location`, `Content-Type`).
+  - Verificação dos links HATEOAS nos retornos.
+  - Validação de autenticação JWT e rotas protegidas (401 / 403).
+  - Validação dos endpoints de Health Check.
+
+### Como Executar os Testes:
+```bash
+# Executa todos os testes da solução
+dotnet test
+
+# Executa apenas os testes unitários
+dotnet test tests/PetHealthEcosystem.Tests.Unit
+
+# Executa apenas os testes de integração
+dotnet test tests/PetHealthEcosystem.Tests.Integration
+```
+
+---
+
+## 🚀 Como Executar o Projeto Localmente
 
 ### Pré-requisitos
-- [.NET SDK 10 / 8](https://dotnet.microsoft.com/download)
-- Instância do SQL Server (LocalDB `(localdb)\mssqllocaldb` ou SQL Server standard)
-- (Opcional) Instância local do MongoDB na porta `27017` (a API possui fallback em memória automático se o MongoDB não estiver rodando no host)
+- [.NET SDK 10 ou superior](https://dotnet.microsoft.com/download)
+- SQL Server (LocalDB `(localdb)\mssqllocaldb` já ativo por padrão no Windows)
+- MongoDB (opcional; a API possui contingência automática para execução em desenvolvimento)
 
-### 1. Restaurar dependências
+### 1. Restaurar os pacotes
 ```bash
 dotnet restore
 ```
 
-### 2. Executar migrações do EF Core
+### 2. Aplicar as migrações do banco relacional
 ```bash
 dotnet ef database update --project src/PetHealthEcosystem.Api
 ```
 
-### 3. Rodar a API
+### 3. Iniciar a API
 ```bash
 dotnet run --project src/PetHealthEcosystem.Api
 ```
-Acesse o Swagger interativo em:
+
+Acesse o **Swagger interativo** no navegador:
 👉 `https://localhost:5001/swagger` ou `http://localhost:5080/swagger`
-
----
-
-## 🧪 Como Executar os Testes Automatizados
-
-Para executar todos os **37 testes automatizados** com relatório de execução:
-
-```bash
-dotnet test
-```
-
-Para rodar projetos específicos:
-```bash
-# Testes Unitários (22 testes)
-dotnet test tests/PetHealthEcosystem.Tests.Unit
-
-# Testes de Integração (15 testes)
-dotnet test tests/PetHealthEcosystem.Tests.Integration
-```
